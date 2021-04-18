@@ -1,4 +1,4 @@
-mod channels;
+pub mod channels;
 
 use crate::models::jsonrpc::JSONRPCVersion;
 use crate::models::Request;

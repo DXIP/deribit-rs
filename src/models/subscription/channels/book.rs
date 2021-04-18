@@ -23,6 +23,7 @@ pub struct BookData {
     pub instrument_name: String,
     pub prev_change_id: Option<i64>,
     pub timestamp: u64,
+    //pub data_type: String
 }
 
 #[derive(Debug, Clone)]

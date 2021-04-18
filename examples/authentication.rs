@@ -14,7 +14,8 @@ async fn main() -> Result<(), Error> {
     let key = var("DERIBIT_KEY").unwrap();
     let secret = var("DERIBIT_SECRET").unwrap();
 
-    let drb = DeribitBuilder::default().testnet(true).build().unwrap();
+    //let drb = DeribitBuilder::default().testnet(true).build().unwrap();
+    let drb = DeribitBuilder::default().testnet(false).build().unwrap();
 
     let (mut client, mut subscription) = drb.connect().await?;
 
@@ -23,16 +24,16 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     let positions = client
-        .call(GetPositionsRequest::futures(Currency::BTC))
+        .call(GetPositionsRequest::options(Currency::ETH))
         .await?
         .await?;
 
     println!("{:?}", positions);
 
     let req = PrivateSubscribeRequest::new(&[
-        "user.portfolio.BTC".into(),
-        "user.trades.BTC-PERPETUAL.raw".into(),
-        "user.trades.BTC-28JUN19-3000-P.raw".into(),
+        "user.portfolio.ETH".into(),
+        "user.trades.ETH-PERPETUAL.raw".into(),
+        "user.trades.ETH-28JUN19-3000-P.raw".into(),
     ]);
 
     let result = client.call(req).await?.await?;

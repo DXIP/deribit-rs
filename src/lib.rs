@@ -3,6 +3,7 @@
 mod api_client;
 pub mod errors;
 pub mod models;
+pub mod predator;
 mod subscription_client;
 
 pub use crate::api_client::{DeribitAPICallRawResult, DeribitAPICallResult, DeribitAPIClient};
