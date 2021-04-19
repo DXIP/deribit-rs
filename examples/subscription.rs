@@ -37,7 +37,7 @@ async fn main() {
                     SubscriptionData::Book(book) => {
                         let book_data = book.data;
                         order_book.update(&book_data);
-                        println!("{:?}", order_book);
+                        //println!("{:?}", order_book);
                         println!("ask: {}", order_book.ask);
                         println!("bid: {}", order_book.bid);
                         println!("spread: {}", order_book.spread);
@@ -47,7 +47,7 @@ async fn main() {
                 //println!("{:?}", book.data);
             }
 
-            panic! {"done"};
+            //panic! {"done"};
         }
     }
 }
