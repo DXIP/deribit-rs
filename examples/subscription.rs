@@ -26,7 +26,7 @@ async fn main() {
 
     let (mut client, mut subscription) = drb.connect().await?;
 
-    let req = PublicSubscribeRequest::new(&["book.BTC-PERPETUAL.100ms".into()]);
+    let req = PublicSubscribeRequest::new(&["book.ETH-PERPETUAL.100ms".into()]);
 
     let _ = client.call(req).await?.await?;
 
