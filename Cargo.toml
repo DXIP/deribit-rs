@@ -32,6 +32,8 @@ tokio-tungstenite = {features = ["rustls-tls"], version = "0.14"}
 tungstenite = {version = "0.13", features = ["rustls-tls"], default-features = false}
 url = "2"
 # anyhow = "1"
+rust_decimal = "1.11"
+rust_decimal_macros = "1.11"
 
 [dev-dependencies]
 dotenv = "0.15"

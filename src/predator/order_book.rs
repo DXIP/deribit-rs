@@ -1,42 +1,38 @@
 use crate::models::subscription::channels::{BookData, Delta, OrderBookDelta};
-
-#[derive(Debug)]
-pub struct OrderBookEntry {
-    pub price: f64,
-    pub volume: f64,
-}
+use rust_decimal_macros::dec;
+use rust_decimal::prelude::*;
+use std::collections::BTreeMap;
 
 #[derive(Debug)]
 pub struct OrderBook {
-    pub ask: f64, //min ask
-    pub bid: f64, //max bid
-    pub spread: f64,
+    pub ask: Decimal, //min ask
+    pub bid: Decimal, //max bid
+    pub spread: Decimal,
 
-    asks: Vec<OrderBookEntry>,
-    bids: Vec<OrderBookEntry>,
+    asks: BTreeMap<Decimal /*price*/, f64 /*volume*/>,
+    bids: BTreeMap<Decimal, f64>,
 }
 
 impl OrderBook {
     pub fn new() -> OrderBook {
         OrderBook {
-            ask: 999999999999f64,
-            bid: 0f64,
-            spread: 0f64,
-            asks: vec![],
-            bids: vec![],
+            ask: Decimal::max_value(),
+            bid: dec!(0.0),
+            spread: dec!(0.0),
+            asks: BTreeMap::new(),
+            bids: BTreeMap::new(),
         }
     }
 
     pub fn update(&mut self, book_data: &BookData) {
         for ask in book_data.asks.iter() {
+            let price = (ask.1*100f64).trunc() as i64;
             match ask.0 {
                 Delta::New => {
-                    self.asks.push(OrderBookEntry {
-                        price: ask.1,
-                        volume: ask.2,
-                    });
-                    if self.ask > ask.1 {
-                        self.ask = ask.1;
+                    let price_decimal = Decimal::new(price, 2);
+                    self.asks.insert(price_decimal, ask.2);
+                    if self.ask > price_decimal {
+                        self.ask = price_decimal;
                     }
                 }
                 Delta::Change => (),
@@ -44,14 +40,13 @@ impl OrderBook {
             }
         }
         for bid in book_data.bids.iter() {
+            let price = (bid.1*100f64).trunc() as i64;
             match bid.0 {
                 Delta::New => {
-                    self.bids.push(OrderBookEntry {
-                        price: bid.1,
-                        volume: bid.2,
-                    });
-                    if self.bid < bid.1 {
-                        self.bid = bid.1;
+                    let price_decimal = Decimal::new(price, 2);
+                    self.bids.insert(price_decimal, bid.2);
+                    if self.bid < price_decimal {
+                        self.bid = price_decimal;
                     }
                 }
                 Delta::Change => (),
@@ -79,7 +74,7 @@ fn test_order_book_update() {
         timestamp: 23424u64,
     };
     order_book.update(&book_data);
-    assert_eq!(3.50f64, order_book.ask);
-    assert_eq!(3.00f64, order_book.bid);
-    assert_eq!(0.50f64, order_book.spread);
+    assert_eq!(dec!(3.50), order_book.ask);
+    assert_eq!(dec!(3.00), order_book.bid);
+    assert_eq!(dec!(0.50), order_book.spread);
 }
