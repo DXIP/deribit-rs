@@ -3,3 +3,7 @@
 Cargo.lock
 .env
 examples/deserialize.rs
+**/*.swp
+.idea/
+**/*.iml
+**/*.vi
