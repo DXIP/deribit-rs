@@ -50,7 +50,6 @@ impl OrderBook {
         }
         for bid in book_data.bids.iter() {
             let price = (bid.1 * 100.0).round() as i64;
-            println!("{}:{}", bid.1, price);
             match bid.0 {
                 Delta::New => {
                     let price_decimal = Decimal::new(price, 2);
