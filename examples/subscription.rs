@@ -1,5 +1,6 @@
 use deribit::models::{
-    HeartbeatType, PublicSubscribeRequest, SetHeartbeatRequest, SubscriptionParams, TestRequest,
+    HeartbeatType, PublicSubscribeRequest, SetHeartbeatRequest, SubscriptionData,
+    SubscriptionParams, TestRequest,
 };
 
 use deribit::predator;
@@ -16,7 +17,7 @@ async fn main() {
     let _ = dotenv();
     init();
 
-    let order_book = predator::OrderBook::new();
+    let mut order_book = predator::OrderBook::new();
 
     let drb = DeribitBuilder::default()
         .subscription_buffer_size(100000usize)
@@ -31,11 +32,20 @@ async fn main() {
 
     while let Some(m) = subscription.next().await {
         if let Ok(val) = m {
-            //println!("{:?}", val);
-            order_book.load(val.params.data);
-            println!("{:?}", order_book);
+            if let SubscriptionParams::Subscription(p) = val.params {
+                match p {
+                    SubscriptionData::Book(book) => {
+                        let book_data = book.data;
+                        order_book.load(&book_data);
+                        println!("{:?}", order_book);
+                        println!("spread: {}", order_book.spread);
+                    }
+                    _ => (),
+                }
+                //println!("{:?}", book.data);
+            }
 
-            panic!{"done"};
+            panic! {"done"};
         }
     }
 }
