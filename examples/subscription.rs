@@ -38,6 +38,8 @@ async fn main() {
                         let book_data = book.data;
                         order_book.load(&book_data);
                         println!("{:?}", order_book);
+                        println!("ask: {}", order_book.ask);
+                        println!("bid: {}", order_book.bid);
                         println!("spread: {}", order_book.spread);
                     }
                     _ => (),

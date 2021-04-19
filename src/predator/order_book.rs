@@ -8,8 +8,8 @@ pub struct OrderBookEntry {
 
 #[derive(Debug)]
 pub struct OrderBook {
-    pub ask: f64, //max ask
-    pub bid: f64, //min bid
+    pub ask: f64, //min ask
+    pub bid: f64, //max bid
     pub spread: f64,
 
     asks: Vec<OrderBookEntry>,
@@ -17,11 +17,10 @@ pub struct OrderBook {
 }
 
 impl OrderBook {
-
     pub fn new() -> OrderBook {
         OrderBook {
-            ask: 0f64,
-            bid: 999999999999.99f64,
+            ask: 999999999999f64,
+            bid: 0f64,
             spread: 0f64,
             asks: vec![],
             bids: vec![],
@@ -34,7 +33,7 @@ impl OrderBook {
                 price: ask.1,
                 volume: ask.2,
             });
-            if self.ask < ask.1 {
+            if self.ask > ask.1 {
                 self.ask = ask.1;
             }
         }
@@ -43,11 +42,11 @@ impl OrderBook {
                 price: bid.1,
                 volume: bid.2,
             });
-            if self.bid > bid.1 {
+            if self.bid < bid.1 {
                 self.bid = bid.1;
             }
         }
-        self.spread = self.bid - self.ask;
+        self.spread = self.ask - self.bid;
     }
 
     pub fn update(&mut self, book_data: &BookData) {
@@ -62,7 +61,7 @@ fn test_order_book_update() {
     let book_data = BookData {
         asks: vec![OrderBookDelta(
             Delta::New,
-            2.50f64, /*price*/
+            3.50f64, /*price*/
             3.50f64, /*amount*/
         )],
         bids: vec![OrderBookDelta(Delta::New, 3.00f64, 3.00f64)],
@@ -72,7 +71,7 @@ fn test_order_book_update() {
         timestamp: 23424u64,
     };
     order_book.load(&book_data);
-    assert_eq!(2.50f64, order_book.ask);
+    assert_eq!(3.50f64, order_book.ask);
     assert_eq!(3.00f64, order_book.bid);
     assert_eq!(0.50f64, order_book.spread);
 }
