@@ -28,7 +28,7 @@ impl OrderBook {
     }
 
     pub fn load(&mut self, book_data: &BookData) {
-        for ask in book_data.asks.clone() {
+        for ask in book_data.asks.iter() {
             self.asks.push(OrderBookEntry {
                 price: ask.1,
                 volume: ask.2,
@@ -37,7 +37,7 @@ impl OrderBook {
                 self.ask = ask.1;
             }
         }
-        for bid in book_data.bids.clone() {
+        for bid in book_data.bids.iter() {
             self.bids.push(OrderBookEntry {
                 price: bid.1,
                 volume: bid.2,
