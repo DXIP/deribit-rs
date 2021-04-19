@@ -9,8 +9,8 @@ pub struct OrderBook {
     pub bid: Decimal, //max bid
     pub spread: Decimal,
 
-    asks: BTreeMap<Decimal /*price*/, f64 /*volume*/>,
-    bids: BTreeMap<Decimal, f64>,
+    pub asks: BTreeMap<Decimal /*price*/, f64 /*volume*/>,
+    pub bids: BTreeMap<Decimal, f64>,
 }
 
 impl OrderBook {
