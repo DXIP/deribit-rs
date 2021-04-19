@@ -29,21 +29,33 @@ impl OrderBook {
 
     pub fn update(&mut self, book_data: &BookData) {
         for ask in book_data.asks.iter() {
-            self.asks.push(OrderBookEntry {
-                price: ask.1,
-                volume: ask.2,
-            });
-            if self.ask > ask.1 {
-                self.ask = ask.1;
+            match ask.0 {
+                Delta::New => {
+                    self.asks.push(OrderBookEntry {
+                        price: ask.1,
+                        volume: ask.2,
+                    });
+                    if self.ask > ask.1 {
+                        self.ask = ask.1;
+                    }
+                }
+                Delta::Change => (),
+                Delta::Delete => (),
             }
         }
         for bid in book_data.bids.iter() {
-            self.bids.push(OrderBookEntry {
-                price: bid.1,
-                volume: bid.2,
-            });
-            if self.bid < bid.1 {
-                self.bid = bid.1;
+            match bid.0 {
+                Delta::New => {
+                    self.bids.push(OrderBookEntry {
+                        price: bid.1,
+                        volume: bid.2,
+                    });
+                    if self.bid < bid.1 {
+                        self.bid = bid.1;
+                    }
+                }
+                Delta::Change => (),
+                Delta::Delete => (),
             }
         }
         self.spread = self.ask - self.bid;
