@@ -27,7 +27,7 @@ impl OrderBook {
         }
     }
 
-    pub fn load(&mut self, book_data: &BookData) {
+    pub fn update(&mut self, book_data: &BookData) {
         for ask in book_data.asks.iter() {
             self.asks.push(OrderBookEntry {
                 price: ask.1,
@@ -48,10 +48,6 @@ impl OrderBook {
         }
         self.spread = self.ask - self.bid;
     }
-
-    pub fn update(&mut self, book_data: &BookData) {
-        for ask in book_data.asks.clone() {}
-    }
 }
 
 #[test]
@@ -70,7 +66,7 @@ fn test_order_book_update() {
         prev_change_id: None,
         timestamp: 23424u64,
     };
-    order_book.load(&book_data);
+    order_book.update(&book_data);
     assert_eq!(3.50f64, order_book.ask);
     assert_eq!(3.00f64, order_book.bid);
     assert_eq!(0.50f64, order_book.spread);

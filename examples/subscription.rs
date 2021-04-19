@@ -36,7 +36,7 @@ async fn main() {
                 match p {
                     SubscriptionData::Book(book) => {
                         let book_data = book.data;
-                        order_book.load(&book_data);
+                        order_book.update(&book_data);
                         println!("{:?}", order_book);
                         println!("ask: {}", order_book.ask);
                         println!("bid: {}", order_book.bid);
