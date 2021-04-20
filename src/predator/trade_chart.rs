@@ -7,6 +7,7 @@ type Milliseconds = u64;
 type Seconds = u64;
 type Minutes = u64;
 
+#[derive(Debug)]
 pub enum TickDirection {
     PlusTick = 0,
     ZeroPlusTick = 1,
@@ -14,6 +15,7 @@ pub enum TickDirection {
     ZeroMinusTick = 3,
 }
 
+#[derive(Debug)]
 pub enum Direction {
     Buy,
     Sell,
@@ -50,6 +52,7 @@ impl Instrument for DeribitOption {
     }
 }
 */
+#[derive(Debug)]
 pub struct Trade {
     pub trade_seq: u64,
     pub trade_id: String,
@@ -82,7 +85,7 @@ impl Trade {
 
 #[derive(Debug)]
 pub struct Candle {
-    pub duration: Seconds,
+    pub duration: Resolution,
     pub start_timestamp: Milliseconds,
 
     pub open: Decimal,
@@ -96,7 +99,7 @@ pub struct Candle {
 impl Candle {
     pub fn new() -> Candle {
         Candle {
-            duration: 60,
+            duration: Resolution::Minute1,
             start_timestamp: 0,
             open: Decimal::new(0, 2),
             high: Decimal::new(0, 2),
@@ -107,21 +110,23 @@ impl Candle {
         }
     }
 
-    fn _align_timestamp(r: Resolution, timestamp: Milliseconds) -> Milliseconds {
-        (timestamp / 1000) / ((r as u64) * 60) * ((r as u64) * 60) * 1000
+    fn _align_timestamp(r: &Resolution, timestamp: Milliseconds) -> Milliseconds {
+        (timestamp / 1000) / ((*r as u64) * 60) * ((*r as u64) * 60) * 1000
     }
 
     fn create(t: &Trade, r: &Resolution) -> Candle {
-        Candle {
-            duration: (*r as u64) * 60,
-            start_timestamp: Self::_align_timestamp(Resolution::Hour1, t.timestamp),
+        let candle = Candle {
+            duration: *r,
+            start_timestamp: Self::_align_timestamp(&r, t.timestamp),
             open: t.price,
             high: t.price,
             low: t.price,
             close: t.price,
             cost: t.amount,
             volume: 0.0,
-        }
+        };
+        println!("creating candle {:?}\nfor trade {:?}", candle, t);
+        candle
     }
 
     fn update(&mut self, t: &Trade) -> Result<(), Candle> {
@@ -129,8 +134,8 @@ impl Candle {
         //    "{} + {} < {}",
         //    self.start_timestamp, self.duration, t.timestamp
         //);
-        if self.start_timestamp + self.duration < t.timestamp {
-            Err(Candle::create(&t, &Resolution::Minute1))
+        if self.start_timestamp + (self.duration as u64) * 60 < t.timestamp {
+            Err(Candle::create(&t, &self.duration))
         } else {
             if self.open == Decimal::new(0, 0) {
                 self.open = t.price;
@@ -177,7 +182,7 @@ impl TradeLog {
                 let _ = match candle.update(t) {
                     //.expect("new candle case not handled");
                     Err(c) => {
-                        //println!("inserting candle");
+                        println!("inserting candle {:?}", c);
                         chart.insert(c.start_timestamp, c);
                         ()
                     }
@@ -185,7 +190,8 @@ impl TradeLog {
                 };
             } else {
                 //println!("adding candle, empty map");
-                chart.insert(t.timestamp, Candle::create(t, r));
+                let candle = Candle::create(t, r);
+                chart.insert(candle.start_timestamp, candle);
             }
         }
     }
@@ -225,8 +231,14 @@ fn test_candle_create() {
     assert_eq!(Decimal::new(10, 0), c.close);
     assert_eq!(10, c.cost);
 
+    trade1.timestamp = 100_000;
+    let mut c = Candle::create(&trade1, &Resolution::Minute1);
+    assert_eq!((Resolution::Minute1 as u64), c.duration as u64);
+    assert_eq!(60_000, c.start_timestamp);
+
     let mut c = Candle::create(&trade1, &Resolution::Minute3);
-    assert_eq!((Resolution::Minute3 as u64) * 60, c.duration);
+    assert_eq!((Resolution::Minute3 as u64), c.duration as u64);
+    assert_eq!(0, c.start_timestamp);
 }
 
 #[test]
@@ -295,18 +307,23 @@ fn test_candle_update() {
 
 #[test]
 fn test_candle_align_timestamp() {
+    assert_eq!(0, Candle::_align_timestamp(&Resolution::Hour1, 10));
+    assert_eq!(
+        60000,
+        Candle::_align_timestamp(&Resolution::Minute1, 100_000)
+    );
     assert_eq!(
         1618934400000,
-        Candle::_align_timestamp(Resolution::Hour1, 1618936720000)
+        Candle::_align_timestamp(&Resolution::Hour1, 1618936720000)
     );
     assert_eq!(
         1618938000000,
-        Candle::_align_timestamp(Resolution::Hour1, 1618938005000)
+        Candle::_align_timestamp(&Resolution::Hour1, 1618938005000)
     );
 
     assert_eq!(
         1618929960000,
-        Candle::_align_timestamp(Resolution::Minute1, 1618929985000)
+        Candle::_align_timestamp(&Resolution::Minute1, 1618929985000)
     );
 }
 
@@ -347,7 +364,7 @@ fn test_trade_log_new_trade() {
     let mut trade_log = TradeLog::new();
 
     let mut trade1 = Trade::new();
-    trade1.timestamp = 1;
+    trade1.timestamp = 10;
     trade1.price = Decimal::new(10, 0);
     trade1.amount = 10;
 
@@ -365,6 +382,16 @@ fn test_trade_log_new_trade() {
     assert_eq!(
         1,
         trade_log.observers.get(&Resolution::Minute1).unwrap().len()
+    );
+    assert_eq!(
+        0,
+        *trade_log
+            .observers
+            .get(&Resolution::Minute1)
+            .unwrap()
+            .keys()
+            .next()
+            .unwrap()
     );
     assert_eq!(
         1,
@@ -388,7 +415,7 @@ fn test_trade_log_new_trade() {
     assert_eq!(Decimal::new(10, 0), minute1_candle.low);
     assert_eq!(Decimal::new(10, 0), minute1_candle.close);
 
-    trade1.timestamp = 100;
+    trade1.timestamp = 100_000;
     trade1.price = Decimal::new(70, 0);
     trade1.amount = 10;
 
@@ -408,4 +435,5 @@ fn test_trade_log_new_trade() {
         1,
         trade_log.observers.get(&Resolution::Minute5).unwrap().len()
     );
+    //assert_eq!(false, true);
 }
