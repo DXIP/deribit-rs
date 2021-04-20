@@ -101,7 +101,7 @@ impl Candle {
         }
     }
 
-    fn _align_timestamp(r: u64, timestamp: u64) -> u64 {
+    fn _align_timestamp(r: Resolution, timestamp: u64) -> u64 {
         (timestamp / 1000) / (r * 60) * (r * 60) * 1000
     }
 
@@ -159,7 +159,8 @@ impl TradeLog {
         //self.trade_log
         for (_r, chart) in self.observers.iter_mut() {
             if let Some(candle) = chart.values_mut().last() {
-                candle.update(&t);
+                candle.update(&t).expect("new candle case not handled");
+                //TODO
             } else {
                 println!("ERROR");
             }
