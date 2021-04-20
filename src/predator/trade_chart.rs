@@ -1,6 +1,12 @@
 use rust_decimal::prelude::Decimal;
 use std::collections::BTreeMap;
 
+/// TODO: introduce standalone types instead of aliases
+///
+type Milliseconds = u64;
+type Seconds = u64;
+type Minutes = u64;
+
 enum TickDirection {
     PlusTick = 0,
     ZeroPlusTick = 1,
@@ -47,7 +53,7 @@ impl Instrument for DeribitOption {
 struct Trade {
     trade_seq: u64,
     trade_id: String,
-    timestamp: u64,
+    timestamp: Milliseconds,
     tick_direction: TickDirection,
     price: Decimal,
     mark_price: Decimal,
@@ -76,8 +82,8 @@ impl Trade {
 
 #[derive(Debug)]
 struct Candle {
-    pub duration: u64,
-    pub start_timestamp: u64,
+    pub duration: Minutes,
+    pub start_timestamp: Milliseconds,
 
     pub open: Decimal,
     pub high: Decimal,
@@ -101,7 +107,7 @@ impl Candle {
         }
     }
 
-    fn _align_timestamp(r: Resolution, timestamp: u64) -> u64 {
+    fn _align_timestamp(r: Resolution, timestamp: Milliseconds) -> Milliseconds {
         (timestamp / 1000) / (r * 60) * (r * 60) * 1000
     }
 
