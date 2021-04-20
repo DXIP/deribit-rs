@@ -125,7 +125,7 @@ impl Candle {
             cost: t.amount,
             volume: 0.0,
         };
-        println!("creating candle {:?}\nfor trade {:?}", candle, t);
+        //println!("creating candle {:?}\nfor trade {:?}", candle, t);
         candle
     }
 
@@ -134,7 +134,7 @@ impl Candle {
         //    "{} + {} < {}",
         //    self.start_timestamp, self.duration, t.timestamp
         //);
-        if self.start_timestamp + (self.duration as u64) * 60 < t.timestamp {
+        if self.start_timestamp + (self.duration as u64) * 60 * 1000 < t.timestamp {
             Err(Candle::create(&t, &self.duration))
         } else {
             if self.open == Decimal::new(0, 0) {
@@ -158,6 +158,7 @@ impl Candle {
 
 pub type TradeCandleChart = BTreeMap<Milliseconds, Candle>;
 
+#[derive(Debug)]
 pub struct TradeLog {
     pub trade_log: Vec<Trade>,
 
@@ -182,7 +183,7 @@ impl TradeLog {
                 let _ = match candle.update(t) {
                     //.expect("new candle case not handled");
                     Err(c) => {
-                        println!("inserting candle {:?}", c);
+                        //println!("inserting candle {:?}", c);
                         chart.insert(c.start_timestamp, c);
                         ()
                     }
@@ -246,27 +247,27 @@ fn test_candle_update() {
     let mut candle = Candle::new();
 
     let mut trade1 = Trade::new();
-    trade1.timestamp = 1;
+    trade1.timestamp = 1_000;
     trade1.price = Decimal::new(10, 0);
     trade1.amount = 10;
     candle.update(&trade1);
 
-    trade1.timestamp = 2;
+    trade1.timestamp = 2_000;
     trade1.price = Decimal::new(5, 0);
     trade1.amount = 10;
     candle.update(&trade1);
 
-    trade1.timestamp = 3;
+    trade1.timestamp = 3_000;
     trade1.price = Decimal::new(7, 0);
     trade1.amount = 10;
     candle.update(&trade1);
 
-    trade1.timestamp = 4;
+    trade1.timestamp = 4_000;
     trade1.price = Decimal::new(55, 0);
     trade1.amount = 10;
     candle.update(&trade1);
 
-    trade1.timestamp = 5;
+    trade1.timestamp = 5_000;
     trade1.price = Decimal::new(30, 0);
     trade1.amount = 10;
     candle.update(&trade1).unwrap();
@@ -280,7 +281,7 @@ fn test_candle_update() {
 
     assert_eq!(50, candle.cost);
 
-    trade1.timestamp = 22;
+    trade1.timestamp = 22_000;
     trade1.price = Decimal::new(80, 0);
     trade1.amount = 10;
     candle.update(&trade1).unwrap();
@@ -289,7 +290,7 @@ fn test_candle_update() {
     assert_eq!(Decimal::new(80, 0), candle.close);
     assert_eq!(60, candle.cost);
 
-    trade1.timestamp = 61;
+    trade1.timestamp = 61_000;
     trade1.price = Decimal::new(80, 0);
     trade1.amount = 10;
 
@@ -303,6 +304,24 @@ fn test_candle_update() {
     assert_eq!(Decimal::new(80, 0), c.low);
     assert_eq!(Decimal::new(80, 0), c.close);
     assert_eq!(10, c.cost);
+
+    let mut candle = Candle::new();
+    trade1.timestamp = 1618956061_000;
+    trade1.price = Decimal::new(80, 0);
+    trade1.amount = 10;
+
+    let mut c = match candle.update(&trade1) {
+        Ok(_) => panic!("Should emit Err() with new handle"),
+        Err(candle) => candle,
+    };
+
+    assert_eq!(161895606_0000, c.start_timestamp);
+
+    trade1.timestamp = 1618956065_000;
+    let mut c = match c.update(&trade1) {
+        Ok(_) => (),
+        Err(candle) => panic!("Should not emit Err() with new handle"),
+    };
 }
 
 #[test]
