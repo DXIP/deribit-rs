@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 
 type Price = Decimal;
 type Volume = f64;
+type OrderBookRecord = BTreeMap<Price, Volume>;
 
 #[derive(Debug)]
 pub struct OrderBook {
@@ -12,8 +13,8 @@ pub struct OrderBook {
     pub bid: Price, //max bid
     pub spread: Decimal,
 
-    pub asks: BTreeMap<Price, Volume>,
-    pub bids: BTreeMap<Price, Volume>,
+    pub asks: OrderBookRecord,
+    pub bids: OrderBookRecord,
 }
 
 impl OrderBook {
