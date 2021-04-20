@@ -3,14 +3,17 @@ use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::BTreeMap;
 
+type Price = Decimal;
+type Volume = f64;
+
 #[derive(Debug)]
 pub struct OrderBook {
-    pub ask: Decimal, //min ask
-    pub bid: Decimal, //max bid
+    pub ask: Price, //min ask
+    pub bid: Price, //max bid
     pub spread: Decimal,
 
-    pub asks: BTreeMap<Decimal /*price*/, f64 /*volume*/>,
-    pub bids: BTreeMap<Decimal, f64>,
+    pub asks: BTreeMap<Price, Volume>,
+    pub bids: BTreeMap<Price, Volume>,
 }
 
 impl OrderBook {
