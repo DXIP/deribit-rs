@@ -108,13 +108,13 @@ impl Candle {
     }
 
     fn _align_timestamp(r: Resolution, timestamp: Milliseconds) -> Milliseconds {
-        (timestamp / 1000) / (r * 60) * (r * 60) * 1000
+        (timestamp / 1000) / ((r as u64) * 60) * ((r as u64) * 60) * 1000
     }
 
     fn create(t: &Trade) -> Candle {
         Candle {
             duration: 60,
-            start_timestamp: Self::_align_timestamp(60, t.timestamp),
+            start_timestamp: Self::_align_timestamp(Resolution::Hour1, t.timestamp),
             open: t.price,
             high: t.price,
             low: t.price,
@@ -147,8 +147,7 @@ impl Candle {
     }
 }
 
-type TradeCandleChart = BTreeMap<u64, Candle>;
-type Resolution = u64;
+type TradeCandleChart = BTreeMap<Milliseconds, Candle>;
 
 struct TradeLog {
     pub trade_log: Vec<Trade>,
@@ -172,6 +171,26 @@ impl TradeLog {
             }
         }
     }
+}
+
+#[repr(u64)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Resolution {
+    Minute1 = 1,
+    Minute3 = 3,
+    Minute5 = 5,
+    Minute10 = 10,
+    Minute15 = 15,
+    Minute30 = 30,
+
+    Hour1 = 60,
+    Hour2 = 120,
+    Hour3 = 180,
+    Hour4 = 240,
+    Hour6 = 360,
+    Hour12 = 720,
+
+    Day1 = 1440,
 }
 
 #[test]
@@ -255,8 +274,17 @@ fn test_candle_update() {
 
 #[test]
 fn test_candle_align_timestamp() {
-    assert_eq!(1618934400000, Candle::_align_timestamp(60, 1618936720000));
-    assert_eq!(1618938000000, Candle::_align_timestamp(60, 1618938005000));
+    assert_eq!(
+        1618934400000,
+        Candle::_align_timestamp(Resolution::Hour1, 1618936720000)
+    );
+    assert_eq!(
+        1618938000000,
+        Candle::_align_timestamp(Resolution::Hour1, 1618938005000)
+    );
 
-    assert_eq!(1618929960000, Candle::_align_timestamp(1, 1618929985000));
+    assert_eq!(
+        1618929960000,
+        Candle::_align_timestamp(Resolution::Minute1, 1618929985000)
+    );
 }
