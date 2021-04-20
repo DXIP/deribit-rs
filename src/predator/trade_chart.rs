@@ -82,7 +82,7 @@ impl Trade {
 
 #[derive(Debug)]
 pub struct Candle {
-    pub duration: Minutes,
+    pub duration: Seconds,
     pub start_timestamp: Milliseconds,
 
     pub open: Decimal,
@@ -111,9 +111,9 @@ impl Candle {
         (timestamp / 1000) / ((r as u64) * 60) * ((r as u64) * 60) * 1000
     }
 
-    fn create(t: &Trade) -> Candle {
+    fn create(t: &Trade, r: &Resolution) -> Candle {
         Candle {
-            duration: 60,
+            duration: (*r as u64) * 60,
             start_timestamp: Self::_align_timestamp(Resolution::Hour1, t.timestamp),
             open: t.price,
             high: t.price,
@@ -125,8 +125,12 @@ impl Candle {
     }
 
     fn update(&mut self, t: &Trade) -> Result<(), Candle> {
+        //println!(
+        //    "{} + {} < {}",
+        //    self.start_timestamp, self.duration, t.timestamp
+        //);
         if self.start_timestamp + self.duration < t.timestamp {
-            Err(Candle::create(&t))
+            Err(Candle::create(&t, &Resolution::Minute1))
         } else {
             if self.open == Decimal::new(0, 0) {
                 self.open = t.price;
@@ -156,18 +160,32 @@ pub struct TradeLog {
 }
 
 impl TradeLog {
-    pub fn trade_chart(&mut self, r: &Resolution) -> &TradeCandleChart {
-        self.observers.entry(*r).or_insert(BTreeMap::new())
+    pub fn new() -> TradeLog {
+        TradeLog {
+            trade_log: vec![],
+            observers: BTreeMap::new(),
+        }
+    }
+    pub fn trade_chart(&mut self, r: Resolution) -> &TradeCandleChart {
+        self.observers.entry(r).or_insert(BTreeMap::new())
     }
 
-    pub fn new_trade(&mut self, t: Trade) -> () {
+    pub fn new_trade(&mut self, t: &Trade) -> () {
         //self.trade_log
-        for (_r, chart) in self.observers.iter_mut() {
+        for (r, chart) in self.observers.iter_mut() {
             if let Some(candle) = chart.values_mut().last() {
-                candle.update(&t).expect("new candle case not handled");
-                //TODO
+                let _ = match candle.update(t) {
+                    //.expect("new candle case not handled");
+                    Err(c) => {
+                        //println!("inserting candle");
+                        chart.insert(c.start_timestamp, c);
+                        ()
+                    }
+                    _ => (),
+                };
             } else {
-                println!("ERROR");
+                //println!("adding candle, empty map");
+                chart.insert(t.timestamp, Candle::create(t, r));
             }
         }
     }
@@ -199,13 +217,16 @@ fn test_candle_create() {
     trade1.timestamp = 1;
     trade1.price = Decimal::new(10, 0);
     trade1.amount = 10;
-    let mut c = Candle::create(&trade1);
+    let mut c = Candle::create(&trade1, &Resolution::Minute1);
 
     assert_eq!(Decimal::new(10, 0), c.open);
     assert_eq!(Decimal::new(10, 0), c.high);
     assert_eq!(Decimal::new(10, 0), c.low);
     assert_eq!(Decimal::new(10, 0), c.close);
     assert_eq!(10, c.cost);
+
+    let mut c = Candle::create(&trade1, &Resolution::Minute3);
+    assert_eq!((Resolution::Minute3 as u64) * 60, c.duration);
 }
 
 #[test]
@@ -286,5 +307,105 @@ fn test_candle_align_timestamp() {
     assert_eq!(
         1618929960000,
         Candle::_align_timestamp(Resolution::Minute1, 1618929985000)
+    );
+}
+
+#[test]
+fn test_trade_log() {
+    let trade_log = TradeLog::new();
+    assert_eq!(0, trade_log.trade_log.len());
+}
+
+#[test]
+fn test_trade_log_charts() {
+    let mut trade_log = TradeLog::new();
+    assert_eq!(0, trade_log.observers.len());
+
+    trade_log.trade_chart(Resolution::Minute1);
+    trade_log.trade_chart(Resolution::Minute3);
+    trade_log.trade_chart(Resolution::Minute5);
+    trade_log.trade_chart(Resolution::Minute1);
+    trade_log.trade_chart(Resolution::Minute3);
+    trade_log.trade_chart(Resolution::Minute5);
+
+    assert_eq!(3, trade_log.observers.len());
+    assert_eq!(true, trade_log.observers.contains_key(&Resolution::Minute1));
+    assert_eq!(true, trade_log.observers.contains_key(&Resolution::Minute3));
+    assert_eq!(true, trade_log.observers.contains_key(&Resolution::Minute5));
+    assert_eq!(
+        false,
+        trade_log.observers.contains_key(&Resolution::Minute15)
+    );
+    assert_eq!(
+        false,
+        trade_log.observers.contains_key(&Resolution::Minute30)
+    );
+}
+
+#[test]
+fn test_trade_log_new_trade() {
+    let mut trade_log = TradeLog::new();
+
+    let mut trade1 = Trade::new();
+    trade1.timestamp = 1;
+    trade1.price = Decimal::new(10, 0);
+    trade1.amount = 10;
+
+    println!("new_trade1");
+    trade_log.new_trade(&trade1);
+    assert_eq!(0, trade_log.observers.len());
+
+    trade_log.trade_chart(Resolution::Minute1);
+    trade_log.trade_chart(Resolution::Minute3);
+    trade_log.trade_chart(Resolution::Minute5);
+    assert_eq!(3, trade_log.observers.len());
+
+    println!("new_trade2");
+    trade_log.new_trade(&trade1);
+    assert_eq!(
+        1,
+        trade_log.observers.get(&Resolution::Minute1).unwrap().len()
+    );
+    assert_eq!(
+        1,
+        trade_log.observers.get(&Resolution::Minute3).unwrap().len()
+    );
+    assert_eq!(
+        1,
+        trade_log.observers.get(&Resolution::Minute5).unwrap().len()
+    );
+
+    let minute1_candle = trade_log
+        .observers
+        .get(&Resolution::Minute1)
+        .unwrap()
+        .values()
+        .last()
+        .unwrap();
+
+    assert_eq!(Decimal::new(10, 0), minute1_candle.open);
+    assert_eq!(Decimal::new(10, 0), minute1_candle.high);
+    assert_eq!(Decimal::new(10, 0), minute1_candle.low);
+    assert_eq!(Decimal::new(10, 0), minute1_candle.close);
+
+    trade1.timestamp = 100;
+    trade1.price = Decimal::new(70, 0);
+    trade1.amount = 10;
+
+    println!("new_trade3");
+    trade_log.new_trade(&trade1);
+
+    println!("{:?}", trade_log.observers);
+    assert_eq!(
+        2,
+        trade_log.observers.get(&Resolution::Minute1).unwrap().len()
+    );
+    assert_eq!(
+        1,
+        trade_log.observers.get(&Resolution::Minute3).unwrap().len()
+    );
+    assert_eq!(
+        1,
+        trade_log.observers.get(&Resolution::Minute5).unwrap().len()
     );
 }
