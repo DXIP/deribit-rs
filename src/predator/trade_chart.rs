@@ -51,16 +51,16 @@ impl Instrument for DeribitOption {
 }
 */
 pub struct Trade {
-    trade_seq: u64,
-    trade_id: String,
-    timestamp: Milliseconds,
-    tick_direction: TickDirection,
-    price: Decimal,
-    mark_price: Decimal,
-    instrument_name: String,
-    index_price: Decimal,
-    direction: Direction,
-    amount: u64,
+    pub trade_seq: u64,
+    pub trade_id: String,
+    pub timestamp: Milliseconds,
+    pub tick_direction: TickDirection,
+    pub price: Decimal,
+    pub mark_price: Decimal,
+    pub instrument_name: String,
+    pub index_price: Decimal,
+    pub direction: Direction,
+    pub amount: u64,
 }
 
 impl Trade {
@@ -156,7 +156,7 @@ pub type TradeCandleChart = BTreeMap<Milliseconds, Candle>;
 pub struct TradeLog {
     pub trade_log: Vec<Trade>,
 
-    observers: BTreeMap<Resolution, TradeCandleChart>,
+    pub observers: BTreeMap<Resolution, TradeCandleChart>,
 }
 
 impl TradeLog {

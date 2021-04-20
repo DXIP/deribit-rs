@@ -10,6 +10,7 @@ use env_logger::init;
 use failure::Error;
 use fehler::throws;
 use futures::StreamExt;
+use rust_decimal::prelude::Decimal;
 
 #[throws(Error)]
 #[tokio::main]
@@ -17,7 +18,12 @@ async fn main() {
     let _ = dotenv();
     init();
 
+    let r = predator::Resolution::Minute1;
+
     let mut order_book = predator::OrderBook::new();
+
+    let mut trade_log = predator::TradeLog::new();
+    trade_log.trade_chart(r);
 
     let drb = DeribitBuilder::default()
         .subscription_buffer_size(100000usize)
@@ -56,6 +62,27 @@ async fn main() {
 
                     SubscriptionData::Trades(trades) => {
                         println!("trades: {:?}", trades.data);
+                        for t in trades.data.iter() {
+                            let trade = predator::Trade {
+                                trade_seq: t.trade_seq,
+                                trade_id: t.trade_id.to_string(),
+                                timestamp: t.timestamp,
+                                tick_direction: predator::TickDirection::PlusTick,
+                                price: Decimal::new((t.price * 100.0).round() as i64, 2),
+                                mark_price: Decimal::new(0, 0), //Decimal::new((t.mark_price * 100.0).round(), 2),
+                                instrument_name: t.instrument_name.to_string(),
+                                index_price: Decimal::new(
+                                    (t.index_price * 100.0).round() as i64,
+                                    2,
+                                ),
+                                direction: predator::Direction::Sell,
+                                amount: t.amount as u64,
+                            };
+
+                            trade_log.new_trade(&trade);
+                            let chart = trade_log.trade_chart(r);
+                            println!("Candles: {:?}", chart);
+                        }
                     }
 
                     _ => (),
