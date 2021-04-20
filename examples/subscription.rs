@@ -23,7 +23,7 @@ async fn main() {
     let mut order_book = predator::OrderBook::new();
 
     let mut trade_log = predator::TradeLog::new();
-    trade_log.trade_chart(r);
+    trade_log.trade_chart(&r);
 
     let drb = DeribitBuilder::default()
         .subscription_buffer_size(100000usize)
@@ -80,7 +80,7 @@ async fn main() {
                             };
 
                             trade_log.new_trade(&trade);
-                            let chart = trade_log.trade_chart(r);
+                            let chart = trade_log.trade_chart(&r);
                             println!("Candles: {:?}", chart);
                         }
                     }

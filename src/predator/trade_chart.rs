@@ -166,8 +166,8 @@ impl TradeLog {
             observers: BTreeMap::new(),
         }
     }
-    pub fn trade_chart(&mut self, r: Resolution) -> &TradeCandleChart {
-        self.observers.entry(r).or_insert(BTreeMap::new())
+    pub fn trade_chart(&mut self, r: &Resolution) -> &TradeCandleChart {
+        self.observers.entry(*r).or_insert(BTreeMap::new())
     }
 
     pub fn new_trade(&mut self, t: &Trade) -> () {
@@ -321,12 +321,12 @@ fn test_trade_log_charts() {
     let mut trade_log = TradeLog::new();
     assert_eq!(0, trade_log.observers.len());
 
-    trade_log.trade_chart(Resolution::Minute1);
-    trade_log.trade_chart(Resolution::Minute3);
-    trade_log.trade_chart(Resolution::Minute5);
-    trade_log.trade_chart(Resolution::Minute1);
-    trade_log.trade_chart(Resolution::Minute3);
-    trade_log.trade_chart(Resolution::Minute5);
+    trade_log.trade_chart(&Resolution::Minute1);
+    trade_log.trade_chart(&Resolution::Minute3);
+    trade_log.trade_chart(&Resolution::Minute5);
+    trade_log.trade_chart(&Resolution::Minute1);
+    trade_log.trade_chart(&Resolution::Minute3);
+    trade_log.trade_chart(&Resolution::Minute5);
 
     assert_eq!(3, trade_log.observers.len());
     assert_eq!(true, trade_log.observers.contains_key(&Resolution::Minute1));
@@ -355,9 +355,9 @@ fn test_trade_log_new_trade() {
     trade_log.new_trade(&trade1);
     assert_eq!(0, trade_log.observers.len());
 
-    trade_log.trade_chart(Resolution::Minute1);
-    trade_log.trade_chart(Resolution::Minute3);
-    trade_log.trade_chart(Resolution::Minute5);
+    trade_log.trade_chart(&Resolution::Minute1);
+    trade_log.trade_chart(&Resolution::Minute3);
+    trade_log.trade_chart(&Resolution::Minute5);
     assert_eq!(3, trade_log.observers.len());
 
     println!("new_trade2");
