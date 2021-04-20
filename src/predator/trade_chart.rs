@@ -7,14 +7,14 @@ type Milliseconds = u64;
 type Seconds = u64;
 type Minutes = u64;
 
-enum TickDirection {
+pub enum TickDirection {
     PlusTick = 0,
     ZeroPlusTick = 1,
     MinusTick = 2,
     ZeroMinusTick = 3,
 }
 
-enum Direction {
+pub enum Direction {
     Buy,
     Sell,
 }
@@ -50,7 +50,7 @@ impl Instrument for DeribitOption {
     }
 }
 */
-struct Trade {
+pub struct Trade {
     trade_seq: u64,
     trade_id: String,
     timestamp: Milliseconds,
@@ -81,7 +81,7 @@ impl Trade {
 }
 
 #[derive(Debug)]
-struct Candle {
+pub struct Candle {
     pub duration: Minutes,
     pub start_timestamp: Milliseconds,
 
@@ -147,9 +147,9 @@ impl Candle {
     }
 }
 
-type TradeCandleChart = BTreeMap<Milliseconds, Candle>;
+pub type TradeCandleChart = BTreeMap<Milliseconds, Candle>;
 
-struct TradeLog {
+pub struct TradeLog {
     pub trade_log: Vec<Trade>,
 
     observers: BTreeMap<Resolution, TradeCandleChart>,
